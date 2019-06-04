@@ -1,11 +1,10 @@
 /*
     CSC 365 LAB 7
     Create And Populate Inn Tables
-    Grant user priviledges
+    Grant user privileges
 */
 
-
-USE DBNAME;
+USE mkong02;
 
 // create tables
 
@@ -46,4 +45,12 @@ INSERT INTO lab7_reservations SELECT CODE, Room,
     Rate, LastName, FirstName, Adults, Kids FROM INN.reservations;
 
 
-// grant priviledges
+// grant privileges
+grant all on INN.reservations to rgadgil@'%';
+grant all on INN.rooms to rgadgil@'%';
+grant all on lab7_rooms to rgadgil@'%';
+grant all on lab7_reservations to rgadgil@'%';
+grant all on INN.reservations to wlarsen@'%';
+grant all on INN.rooms to wlarsen@'%';
+grant all on lab7_rooms to wlarsen@'%';
+grant all on lab7_reservations to wlarsen@'%';
