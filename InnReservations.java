@@ -12,7 +12,31 @@ public class InnReservations {
 
 
     public static void main(String[] args) {
+      // load driver
+      try {
+          Class.forName(JDBC_DRIVER);
+          System.out.println("Succesfuully loaded Driver");
+      } catch (SQLException ex) {
+          System.out.println("Unable to load Driver")
+          System.out.println("SQLException: " + ex.getMessage());
+          System.out.println("SQLState: " + ex.getSQLState());
+          System.out.println("VendorError: " + ex.getErrorCode());
+      }
 
+      // est connection
+      try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)){
+              // CODE?
+              stmt = "SELECT * FROM lab_7_reservations";
+              
+
+
+      } catch (){
+
+      } finally (){
+          conn.close();
+      }
+
+      /*
         try {
             InnReservations ir = new InnReservations();
 
@@ -20,11 +44,15 @@ public class InnReservations {
             ir.sample();
 
             //switch statement??????????
+
+            // read the
+
             // to go betweeen r1, r2. ......
+
 
         } catch (SQLException e) {
             System.err.println("SQLException: " + e.getMessage());
-        }
+        }*/
 
     }
 
@@ -43,6 +71,9 @@ public class InnReservations {
 
         // est connection
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)){
+                // CODE?
+
+
 
         } catch (){
 
