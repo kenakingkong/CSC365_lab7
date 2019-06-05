@@ -16,8 +16,8 @@ import java.util.ArrayList;
 public class InnReservations {
 
   // JDBC Driver name and DB url
-  public final static String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-  public final static String DB_URL = "jdbc:mysql://db.labthreesixfive.com/spring2019";
+  public final static String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
+  public final static String DB_URL = "jdbc:mysql://db.labthreesixfive.com/mkong02?autoReconnect=true&useSSL=false";
   public final static String USER = "mkong02";
   public final static String PASS = "S19_CSC-365-012538483";
 
