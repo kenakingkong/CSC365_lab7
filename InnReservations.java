@@ -13,8 +13,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
 
-
-
 public class InnReservations {
 
   // JDBC Driver name and DB url
@@ -43,6 +41,8 @@ public class InnReservations {
           System.out.println("VendorError: " + ex.getErrorCode());
         };
 
+
+
       /*
         try {
             InnReservations ir = new InnReservations();
@@ -66,26 +66,24 @@ public class InnReservations {
     /*
     private void sample() throws SQLException {
 
-        // load driver
         try {
-            Class.forName(JDBC_DRIVER);
-            System.out.println("Succesfuully loaded Driver");
+            Class.forName("com.mysql.jdbc.Driver");
+            System.out.println("MySQL JDBC Driver loaded");
+        } catch (ClassNotFoundException ex) {
+            System.err.println("Unable to load JDBC Driver");
+            System.exit(-1);
+        };
+
+      try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+
+          System.out.println("connected!");
+          conn.close();
         } catch (SQLException ex) {
-            System.out.println("Unable to load Driver")
-            System.out.println("SQLException: " + ex.getMessage());
-            System.out.println("SQLState: " + ex.getSQLState());
-            System.out.println("VendorError: " + ex.getErrorCode());
-        }
-
-        // est connection
-        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)){
-                // CODE?
-
-
-
-        finally (){
-            conn.close();
-        }
+          System.out.println("Unable to load Driver");
+          System.out.println("SQLException: " + ex.getMessage());
+          System.out.println("SQLState: " + ex.getSQLState());
+          System.out.println("VendorError: " + ex.getErrorCode());
+        };
     }
 */
 
