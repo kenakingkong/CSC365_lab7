@@ -1,18 +1,49 @@
-ipmort java.sql.*;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.lang.*;
+import java.util.Scanner;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.LinkedHashMap;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.ArrayList;
 
 public class InnReservations {
 
-    // JDBC Driver name and DB url
-    static final string JDBC_DRIVER = "com.mysql.jdbc.Driver";
-    static final String DB_URL = "jdbc:mysql:db.labthreesixfive.com/mkong02";
+  // JDBC Driver name and DB url
+  public final static String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
+  public final static String DB_URL = "jdbc:mysql://db.labthreesixfive.com/mkong02?autoReconnect=true&useSSL=false";
+  public final static String USER = "mkong02";
+  public final static String PASS = "S19_CSC-365-012538483";
 
-    // DB credentials
-    static final String USER = "mkong02";
-    static final String PASS = "S19_CSC-365-012538483";
+  public static void main(String[] args) {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            System.out.println("MySQL JDBC Driver loaded");
+        } catch (ClassNotFoundException ex) {
+            System.err.println("Unable to load JDBC Driver");
+            System.exit(-1);
+        };
+
+    	try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+
+          System.out.println("connected!");
+          conn.close();
+        } catch (SQLException ex) {
+          System.out.println("Unable to load Driver");
+          System.out.println("SQLException: " + ex.getMessage());
+          System.out.println("SQLState: " + ex.getSQLState());
+          System.out.println("VendorError: " + ex.getErrorCode());
+        };
 
 
-    public static void main(String[] args) {
 
+      /*
         try {
             InnReservations ir = new InnReservations();
 
@@ -20,17 +51,21 @@ public class InnReservations {
             ir.sample();
 
             //switch statement??????????
+
+            // read the
+
             // to go betweeen r1, r2. ......
+
 
         } catch (SQLException e) {
             System.err.println("SQLException: " + e.getMessage());
-        }
+        }*/
 
     }
 
+    /*
     private void sample() throws SQLException {
 
-        // load driver
         try {
             Class.forName(JDBC_DRIVER);
             System.out.println("Successfully loaded Driver");
@@ -44,13 +79,18 @@ public class InnReservations {
         // est connection
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)){
 
-        } catch (){
+      try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
 
-        } finally (){
-            conn.close();
-        }
+          System.out.println("connected!");
+          conn.close();
+        } catch (SQLException ex) {
+          System.out.println("Unable to load Driver");
+          System.out.println("SQLException: " + ex.getMessage());
+          System.out.println("SQLState: " + ex.getSQLState());
+          System.out.println("VendorError: " + ex.getErrorCode());
+        };
     }
-
+*/
 
     /*
     * PROBLEMS:
@@ -62,10 +102,10 @@ public class InnReservations {
     * R6: Revenue
     * */
 
-    private String resInfo(){
-      String[] searchBy = parameters.split(",");
 
-    }
+    /*
+    private void resInfo(){
+      Scanner in = new Scanner();
+    }*/
 
-    private String[]
 }
