@@ -33,7 +33,7 @@ public class InnReservations {
         // load driver
         try {
             Class.forName(JDBC_DRIVER);
-            System.out.println("Succesfuully loaded Driver");
+            System.out.println("Successfully loaded Driver");
         } catch (SQLException ex) {
             System.out.println("Unable to load Driver")
             System.out.println("SQLException: " + ex.getMessage());
@@ -62,4 +62,10 @@ public class InnReservations {
     * R6: Revenue
     * */
 
+    private String resInfo(){
+      String[] searchBy = parameters.split(",");
+
+    }
+
+    private String[]
 }
