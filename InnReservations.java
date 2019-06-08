@@ -13,6 +13,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
 
+// RUN THIS ON YOUR TERMINAL!!!!!!!!!!
+//export CLASSPATH=$CLASSPATH:mysql-connector-java-8.0.16.jar:.
+
 public class InnReservations {
 
   // JDBC Driver name and DB url
@@ -22,8 +25,8 @@ public class InnReservations {
   public final static String PASS = "S19_CSC-365-012538483";
 
   public static void main(String[] args) {
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
+      try {
+            Class.forName(JDBC_DRIVER);
             System.out.println("MySQL JDBC Driver loaded");
         } catch (ClassNotFoundException ex) {
             System.err.println("Unable to load JDBC Driver");
