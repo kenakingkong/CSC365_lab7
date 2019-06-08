@@ -41,7 +41,7 @@ public class InnReservations {
     private void sample() throws SQLException {
 
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName(JDBC_DRIVER);
             System.out.println("MySQL JDBC Driver loaded");
         } catch (ClassNotFoundException ex) {
             System.err.println("Unable to load JDBC Driver");
@@ -93,11 +93,62 @@ public class InnReservations {
     try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
 
         System.out.println("connected!");
+        conn.setAutoCommit(false);
+        Scanner sc = new Scanner(System.in);
 
-        // ask for user input for
-        // FirstName, LastName, BeginDate, EndDate, Numberof Children, Number of Adults
+        // get reservation code
+        System.out.println("Enter Reservation Code: ");
+        String input = sc.nextLine();
 
-        // 
+        // get reservation
+        findReservation = conn.prepareStatement(findString);
+        findReservation.setInt(1, code);
+        ResultSet foundReservation = findReservation.executeQuery();
+
+        // check if Reservation exists
+        if (foundReservation.next() == false){
+          System.out.println("Reservation " + code + " not found.");
+          return;
+        }
+
+        // get changes
+        System.out.println("Enter changes or press ENTER to skip.\n");
+        System.out.println("Enter FirstName: ");
+        String firstName = sc.nextLine();
+        System.out.println("Enter LastName: ");
+        String lastName = sc.nextLine();
+        System.out.println("Enter Begin Date: ");
+        Date beginDate = sc.nextLine();
+        System.out.println("Enter EndDate: ");
+        Date endDate = sc.nextLine();
+        System.out.println("Enter Number of Children: ");
+        int numChildren = sc.nextLine();
+        System.out.println("Enter Number of Adults: ");
+        int numAdults = sc.nextLine();
+
+        // check for date conflicts
+
+
+        // print the updates
+        System.out.println("Are you sure you want to make these changes? Y/N");
+        char confirmation = sc.nextLine();
+
+        if (confirmation == "Y" || confimation == "y"){
+          // put update query here
+          //updateReservation = conn.prepareStatement(updateString);
+          //updateReservation.setString();
+
+
+          //ResultSet updated =
+
+          if (updated){
+            System.out.println("Successfully updated Reservation " + code);
+          } else {
+            System.out.println("Failed to update Reservation " + code);
+          }
+        } else {
+          System.out.println("ok");
+        }
 
         conn.close();
       } catch (SQLException ex) {
@@ -132,22 +183,31 @@ public class InnReservations {
     try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
 
         System.out.println("connected!");
-        conn.setAutoCommit(false)
+        conn.setAutoCommit(false);
+        Scanner sc = new Scanner(System.in);
 
+        // get reservation code
+        System.out.println("Enter Reservation Code: ");
+        String input = sc.nextLine();
+
+        // get reservation
         findReservation = conn.prepareStatement(findString);
         findReservation.setInt(1, code);
         ResultSet foundReservation = findReservation.executeQuery();
 
         // check if Reservation exists
         if (foundReservation.next() == false){
-          System.out.println("Reservation not found.");
+          System.out.println("Reservation " + code + " not found.");
           return;
         }
 
         // print result set
         // confirm they want to cancel it
 
-        if (confirmation){
+        System.out.println("Are you sure you want to cancel this reservation? Y/N");
+        char confirmation = sc.nextLine();
+
+        if (confirmation == "Y" || confimation == "y"){
           deleteReservation = conn.prepareStatement(deleteString);
           deleteReservation.setInt(code)
           ResultSet deleted = deleteReservation.executeUpdate()
