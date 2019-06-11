@@ -32,13 +32,62 @@ public class InnReservations {
         try {
             InnReservations ir = new InnReservations();
 
-            // PRINT MAIN MENU HERE
-            // SCANNER INPUT
-            // SWITCH OR IF STATEMENT
-            // CALL ir.sample();
+            String menu = "\nChoose one of the following options: \n" +
+                          "\ta - View rooms and rates.\n" +
+                          "\tb - Make a reservation.\n" +
+                          "\tc - Update a reservation.\n" +
+                          "\td - Cancel a reservation.\n" +
+                          "\te - Search for a reservation.\n" +
+                          "\tf - Show monthly revenue.\n" +
+                          "\tm - Show options.\n" +
+                          "\tq - Quit.";
 
-            ir.changeReservation();
-            //ir.cancelReservation();
+            // display main menu
+            System.out.println("\nWELCOME TO THE JDBC HOTEL! :)\n");
+            System.out.println(menu);
+
+            // get user input
+            while (true) {
+              Scanner mainScanner = new Scanner(System.in);
+              System.out.println("\nEnter option: ");
+              char option = mainScanner.nextLine().charAt(0);
+              switch(option) {
+                case 'a':
+                  System.out.println("\nView rooms and rates.\n");
+                  //call function
+                  break;
+                case 'b':
+                  System.out.println("\nMake a reservation.\n");
+                  //call function
+                  break;
+                case 'c':
+                System.out.println("\nUpdate a reservation.\n");
+                  ir.changeReservation();
+                  break;
+                case 'd':
+                System.out.println("\nCancel a eservation.\n");
+                  ir.cancelReservation();
+                  break;
+                case 'e':
+                  System.out.println("\nSearch for a reservation.\n");
+                  //call function
+                  break;
+                case 'f':
+                  System.out.println("\nShow monthly revenue\n");
+                  //call function
+                  break;
+                case 'm':
+                  System.out.println(menu);
+                  break;
+                case 'q':
+                  System.out.println("Bye!\n");
+                  System.exit(0);
+                default:
+                  System.out.println("Sorry that wasn't an option!\n" +
+                                      "Try using lower case or enter 'm' to show options.\n");
+                  break;
+              }
+            }
 
         } catch (SQLException e) {
             System.err.println("SQLException: " + e.getMessage());
@@ -81,7 +130,7 @@ public class InnReservations {
 
       try {
           Class.forName(JDBC_DRIVER);
-          System.out.println("MySQL JDBC Driver loaded");
+          //System.out.println("MySQL JDBC Driver loaded");
       } catch (ClassNotFoundException ex) {
           System.err.println("Unable to load JDBC Driver");
           System.exit(-1);
@@ -90,7 +139,6 @@ public class InnReservations {
     try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
 
         //System.out.println("connected!");
-        System.out.println("Change a Reservation");
         conn.setAutoCommit(false);
         Scanner sc = new Scanner(System.in);
 
@@ -257,14 +305,13 @@ public class InnReservations {
           Class.forName(JDBC_DRIVER);
           System.out.println("MySQL JDBC Driver loaded");
       } catch (ClassNotFoundException ex) {
-          System.err.println("Unable to load JDBC Driver");
+          //System.err.println("Unable to load JDBC Driver");
           System.exit(-1);
       };
 
     try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
 
         //System.out.println("connected!");
-        System.out.println("Cancel a Reservation");
         conn.setAutoCommit(false);
         Scanner sc = new Scanner(System.in);
 
