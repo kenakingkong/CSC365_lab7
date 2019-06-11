@@ -1,3 +1,4 @@
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Connection;
@@ -10,6 +11,8 @@ import java.util.Scanner;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.LinkedHashMap;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import java.util.Date;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,15 +37,15 @@ public class InnReservations {
             // SWITCH OR IF STATEMENT
             // CALL ir.sample();
 
-            //ir.changeReservation();
-            ir.cancelReservation();
+            ir.changeReservation();
+            //ir.cancelReservation();
 
         } catch (SQLException e) {
             System.err.println("SQLException: " + e.getMessage());
         }
   }
 
-    public static void print_reservation(ResultSet r) throws SQLException{
+  public static void print_reservation(ResultSet r) throws SQLException{
       int code = r.getInt(1);
       String room = r.getString(2);
       Date begin = r.getDate(3);
@@ -63,18 +66,15 @@ public class InnReservations {
       throws SQLException {
 
       PreparedStatement findReservation = null;
-      PreparedStatement checkBeginDate = null;
-      PreparedStatement checkEndDate = null;
+      PreparedStatement checkDate = null;
       PreparedStatement checkOccupancy = null;
       PreparedStatement updateReservation = null;
 
       String findString = "SELECT * FROM " + DB_NAME + ".lab7_reservations WHERE CODE = ?";
-      String checkBeginString = "SELECT CheckIn FROM " + DB_NAME + ".lab7_reservations" +
-                                "WHERE Room = ? AND NOT CODE = ?";
-      String checkEndString = "SELECT Checkout FROM " + DB_NAME + ".lab7_reservations" +
-                              "WHERE Room = ? AND NOT CODE = ?";
-      String checkOccupancyString = "SELECT maxOcc FROM " + DB_NAME + "./lab7_rooms" +
-                                    "WHERE Room = ? AND NOT CODE = ?";
+      String checkDateString = "SELECT ? FROM "+ DB_NAME + ".lab7_reservations " +
+                                "WHERE (Room=?) AND (? BETWEEN CheckIn AND Checkout);";
+      String checkOccupancyString = "SELECT maxOcc FROM " + DB_NAME + ".lab7_rooms " +
+                                    "WHERE RoomCode = ?";
       String updateString = "UPDATE " + DB_NAME + ".lab7_reservations" +
                             "SET CheckIn=?, Checkout=?, LastName=?, FirstName=?, Adults=?,Kids=?" +
                             "WHERE CODE = ?";
@@ -99,7 +99,9 @@ public class InnReservations {
         String code = sc.nextLine();
 
         // get reservation
-        findReservation = conn.prepareStatement(findString);
+        findReservation = conn.prepareStatement(findString,
+                                                ResultSet.TYPE_SCROLL_INSENSITIVE,
+                                                ResultSet.CONCUR_UPDATABLE);
         findReservation.setString(1, code);
         ResultSet foundReservation = findReservation.executeQuery();
 
@@ -109,61 +111,138 @@ public class InnReservations {
           return;
         }
 
-        /*
-        // get changes
-        System.out.println("Enter changes or press ENTER to skip.\n");
+        // print reservation
+        //print_reservation(foundReservation);
+
+        // get input
+        System.out.println("Enter changes or press ENTER to skip.");
         System.out.println("Enter FirstName: ");
-        String firstName = sc.nextLine();
+        String firstName = sc.nextLine().toUpperCase();
         System.out.println("Enter LastName: ");
-        String lastName = sc.nextLine();
-        System.out.println("Enter Begin Date: ");
-        Date beginDate = new Date(sc.nextLine());
-        System.out.println("Enter EndDate: ");
-        Date endDate = new Date(sc.nextLine());
+        String lastName = sc.nextLine().toUpperCase();
+        java.sql.Date beginDate = null;
+        System.out.println("Enter Begin Date yyyy-MM-dd: ");
+        String beginDateInput = sc.nextLine();
+        if (beginDateInput.equals("") == false){
+          try{
+            Date tempDate = new SimpleDateFormat("yyyy-MM-dd").parse(beginDateInput);
+            beginDate = new java.sql.Date(tempDate.getTime());
+          } catch (ParseException e) {
+            System.out.println("Invalid Date. Try again with format  yyyy-MM-dd.");
+            return;
+          }
+        }
+        java.sql.Date endDate = null;
+        System.out.println("Enter EndDate yyyy-MM-dd: ");
+        String endDateInput = sc.nextLine();
+        if (endDateInput.equals("") == false){
+          try {
+            Date tempDate =  new SimpleDateFormat("yyyy-MM-dd").parse(endDateInput);
+            endDate = new java.sql.Date(tempDate.getTime());
+          } catch (ParseException e) {
+            System.out.println("Invalid Date. Try again with format  yyyy-MM-dd.");
+            return;
+          }
+        }
         System.out.println("Enter Number of Children: ");
-        int numChildren = sc.nextInt();
+        String numChildren = sc.nextLine();
         System.out.println("Enter Number of Adults: ");
-        int numAdults = sc.nextInt();
+        String numAdults = sc.nextLine();
+
+        //room name first
+        String roomCode = foundReservation.getString("Room");
 
         // check for date conflicts
-        //checkBeginDate = conn.prepareStatement(checkBeginString);
-        //checkBeginDate.setString(0,);
+        if ((beginDate != null) && (endDate != null) && (beginDate.equals(endDate) == true)){
+          System.out.println("You cannot cannot CheckIn and Checkout on the same day.");
+          return;
+        }
 
-
-        // check for max occupancy?
-
-
-        // print the updates
-        System.out.println("Are you sure you want to make these changes? Y/N");
-        char confirmation = sc.nextChar();
-
-        if (confirmation == 'Y' || confimation == 'y'){
-          // put update query here
-          //updateReservation = conn.prepareStatement(updateString);
-          //updateReservation.setString();
-
-          //ResultSet updatedReservation =
-          //updated = updatedReservation.rowUpdated( )
-          print("should update");
-
-          if (updated){
-            System.out.println("Successfully updated Reservation " + code);
-          } else {
-            System.out.println("Failed to update Reservation " + code);
+        // check checkin date
+        if (beginDate != null){
+          //java.sql.Date beginDateSQL = new java.sql.Date(beginDate.getTime());
+          checkDate = conn.prepareStatement(checkDateString);
+          checkDate.setObject(1,"CheckIn");
+          checkDate.setString(2,roomCode);
+          checkDate.setObject(3,beginDate);
+          ResultSet beginResults = checkDate.executeQuery();
+          if (beginResults.next()){
+            System.out.println("Check In Date is unavailable.");
+            return;
           }
+          if (beginDate.equals(foundReservation.getDate("Checkout"))){
+            System.out.println("You cannot checkin and checkout on the same day.");
+            return;
+          }
+        }
+
+        //check checkout date
+        if (endDate != null){
+          //java.sql.Date endDateSQL = new java.sql.Date(endDate.getTime());
+          checkDate = null;
+          checkDate = conn.prepareStatement(checkDateString);
+          checkDate.setObject(1,"Checkout");
+          checkDate.setString(2,roomCode);
+          checkDate.setObject(3,endDate);
+          ResultSet endResults = checkDate.executeQuery();
+          if (endResults.next()){
+            System.out.println("Check out Date is unavailable.");
+            return;
+          }
+          if (endDate.equals(foundReservation.getDate("CheckIn"))){
+            System.out.println("You cannot checkin and checkout on the same day.");
+            return;
+          }
+        }
+
+        // check for max occupancy
+        if ((numChildren.equals("") == false) || (numAdults.equals("") == false)) {
+          int occInput = 0;
+          if (numChildren.equals("") == false)
+            occInput += Integer.parseInt(numChildren);
+          if (numAdults.equals("") == false)
+            occInput += Integer.parseInt(numAdults);
+          checkOccupancy = conn.prepareStatement(checkOccupancyString);
+          checkOccupancy.setString(1,roomCode);
+          ResultSet occ = checkOccupancy.executeQuery();
+          int occLimit = 1;
+          if (occ.next()){
+            occLimit = occ.getInt("maxOcc");
+          }
+          if (occInput > occLimit) {
+            System.out.printf("Cannot exceed room occupany limit of %d.\n",occLimit);
+          }
+        }
+
+        // confirm they want to cancel it
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Are you sure you want to update this reservation? Y/N");
+        char confirmation = scan.nextLine().charAt(0);
+
+        if (confirmation == 'Y' || confirmation == 'y'){
+          if (firstName.equals("") == false)
+            foundReservation.updateString("FirstName", firstName);
+          if (lastName.equals("") == false)
+            foundReservation.updateString("LastName", lastName);
+          if (beginDate != null)
+            foundReservation.updateDate("CheckIn", beginDate);
+          if (endDate != null)
+            foundReservation.updateDate("Checkout", endDate);
+          if (numChildren.equals("") == false)
+            foundReservation.updateInt("Kids", Integer.parseInt(numChildren));
+          if (numAdults.equals("") == false)
+            foundReservation.updateInt("Adults", Integer.parseInt(numAdults));
+          foundReservation.updateRow();
+          System.out.println("Successfully updated Reservation " + code);
         } else {
           System.out.println("ok");
         }
-        */
 
+        conn.commit();
         conn.close();
       } catch (SQLException ex) {
-        System.out.println("Unable to load Driver");
-        System.out.println("SQLException: " + ex.getMessage());
-        System.out.println("SQLState: " + ex.getSQLState());
-        System.out.println("VendorError: " + ex.getErrorCode());
+        System.out.println("Failed to update Reservation.");
       };
-
 
     }
 
@@ -172,10 +251,7 @@ public class InnReservations {
       throws SQLException{
 
       PreparedStatement findReservation = null;
-      PreparedStatement deleteReservation = null;
-
       String findString = "SELECT * FROM " + DB_NAME + ".lab7_reservations WHERE CODE = ?";
-      String deleteString = "DELETE FROM " + DB_NAME + ".lab7_reservations WHERE CODE = ?";
 
       try {
           Class.forName(JDBC_DRIVER);
@@ -197,7 +273,9 @@ public class InnReservations {
         String code = sc.nextLine();
 
         // get reservation
-        findReservation = conn.prepareStatement(findString);
+        findReservation = conn.prepareStatement(findString,
+                                                ResultSet.TYPE_SCROLL_INSENSITIVE,
+                                                ResultSet.CONCUR_UPDATABLE);
         findReservation.setString(1, code);
         ResultSet foundReservation = findReservation.executeQuery();
 
@@ -213,11 +291,9 @@ public class InnReservations {
         // confirm they want to cancel it
         System.out.println("Are you sure you want to cancel this reservation? Y/N");
         char confirmation = sc.nextLine().charAt(0);
-
         if (confirmation == 'Y' || confirmation == 'y'){
-          deleteReservation = conn.prepareStatement(deleteString);
-          deleteReservation.setString(1, code);
-          deleteReservation.executeUpdate();
+          //delete entry
+          foundReservation.deleteRow();
           System.out.println("Successfully cancelled Reservation " + code + ".");
         } else {
           System.out.println("ok");
@@ -227,12 +303,6 @@ public class InnReservations {
         conn.close();
       } catch (SQLException ex) {
         System.out.println("Failed to cancel Reservation.");
-        /*
-        System.out.println("Unable to load Driver");
-        System.out.println("SQLException: " + ex.getMessage());
-        System.out.println("SQLState: " + ex.getSQLState());
-        System.out.println("VendorError: " + ex.getErrorCode());
-        */
       };
 
     }
