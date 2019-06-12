@@ -106,9 +106,71 @@ public class InnReservations {
     * */
 
 
-    /*
-    private void resInfo(){
-      Scanner in = new Scanner();
-    }*/
+    private static void revenue(){
+      Scanner in = new Scanner(System.in);
+
+    }
+
+
+    private static void resInfo(){
+      String constraints = "";
+      String begin = "SELECT res.CODE,\n\tres.Room,\n\trooms.RoomName,\n\tres.CheckIn,\n\tres.CheckOut,\n\tres.Rate,\n\tres.LastName,\n\tres.FirstName,\n\tres.Adults,\n\tres.Kids\nFROM INN.reservations as res\nJOIN INN.rooms AS rooms ON\n\trooms.RoomCode = res.Room\n";
+      String end = "\nORDER BY res.CODE;";
+      String input;
+      Scanner in = new Scanner(System.in);
+      System.out.println("Leave entry blank to indicate 'Any'");
+      System.out.println("Enter first name:");
+      input = in.nextLine();
+      constraints = constraints + inputToSQL(input, "res.FirstName");
+      System.out.println("Enter last name:");
+      input = in.nextLine();
+      constraints = constraints + inputToSQL(input, "res.LastName");
+      System.out.println("Enter range of dates [format: yyyy-mm-dd to yyyy-mm-dd]:");
+      input = in.nextLine();
+      constraints = constraints + inputToSQL(input, "res.CheckIn");
+      System.out.println("Enter room code:");
+      input = in.nextLine();
+      constraints = constraints + inputToSQL(input, "res.Room");
+      System.out.println("Enter reservation code:");
+      input = in.nextLine();
+      constraints = constraints + inputToSQL(input, "res.CODE");
+      if(constraints.length() > 0){
+        constraints = "WHERE\n\t" + constraints.substring(0, constraints.length() - 6);
+      }
+      String query = begin + constraints + end;
+      System.out.println(query);
+    }
+
+    private static String inputToSQL(String input, String column){
+      input = input.trim();
+      System.out.println(input);
+      if(input.length() == 0) return "";
+      String output;
+      switch(column){
+        case "res.FirstName":
+          output = column + " LIKE '" + input + "'";
+          break;
+        case "res.LastName":
+          output = column + " LIKE '" + input + "'";
+          break;
+        case "res.CheckIn":
+          output = dateFormat(input);
+          break;
+        case "res.Room":
+          output = column + "LIKE '" + input + "'";
+          break;
+        default:
+          output = column + "LIKE " + input;
+      }
+      output = output + " AND\n\t";
+      return output;
+    }
+
+    private static String dateFormat(String input){
+      String[] arr = input.split(" to ");
+      String checkDate = "BETWEEN DATE '%s' AND DATE '%s'";
+      checkDate = String.format(checkDate, arr[0], arr[1]);
+      return "res.CheckIn " + checkDate + " AND res.CheckOut " + checkDate;
+    }
 
 }
