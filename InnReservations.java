@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.concurrent.ThreadLocalRandom;
 
 // RUN THIS ON YOUR TERMINAL!!!!!!!!!!
 //export CLASSPATH=$CLASSPATH:mysql-connector-java-8.0.16.jar:.
@@ -554,6 +555,256 @@ public class InnReservations {
     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!
   **/
 
+  public class RoomReservation {
+
+    String room;
+    String enddate;
+    String startdate;
+
+    RoomReservation(String room, String startdate, String enddate) {
+      this.room = room;
+      this.startdate = startdate;
+      this.enddate = enddate;
+    }
+  }
+
+  private void R1() throws SQLException {
+
+    try {
+          Class.forName(JDBC_DRIVER);
+          //System.out.println("MySQL JDBC Driver loaded");
+      } catch (ClassNotFoundException ex) {
+          System.err.println("Unable to load JDBC Driver");
+          System.exit(-1);
+      };
+
+      try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+
+        String sqlA = "WITH A AS (     SELECT RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor, ROUND(SUM(OccupiedDays)/180,2) as PopScore          FROM (             SELECT *, DATEDIFF(LEAST(NOW(), CheckOut), GREATEST(DATEDIFF(NOW(), CheckIn) - 180, CheckIn)) as OccupiedDays             FROM lab7_reservations as Res                 INNER JOIN lab7_rooms as Rooms ON Res.Room = Rooms.RoomCode             WHERE CheckOut >= DATEDIFF(NOW(), CheckIn) - 180 AND CheckIn <= NOW()         ) as occupied     GROUP BY ROOM     ORDER BY PopScore DESC ), B AS (     SELECT distinct Room, CURRENT_DATE() as NextAvailableCheckIn         FROM lab7_reservations          WHERE Room NOT IN (SELECT Room             FROM lab7_reservations              WHERE NOW() BETWEEN CheckIn AND CheckOut)     UNION     SELECT Room, CheckOut     FROM (     SELECT *,         RANK() OVER (PARTITION BY ROOM ORDER BY NextDate ASC) as Ranking     FROM (         SELECT *, DATEDIFF(CheckOut, NOW()) as NextDate             FROM lab7_reservations as R         WHERE CODE NOT IN (SELECT R.CODE             FROM lab7_reservations as R             INNER JOIN lab7_reservations as R1 ON R.Room = R1.Room             AND R.CheckOut = R1.CheckIn)              AND Room IN (SELECT Room             FROM lab7_reservations              WHERE NOW() BETWEEN CheckIn AND CheckOut)     ) as CheckOuts     WHERE NextDate > 0     ) as Ranker     WHERE Ranking = 1 ), C AS (     SELECT ROOM, LatestLengthofStay, CheckOut AS LatestCheckOut     FROM (         SELECT *, RANK() OVER (PARTITION BY ROOM ORDER BY Prev DESC) as Ranker         FROM (             SELECT *, DATEDIFF(CheckOut, NOW()) as Prev, DATEDIFF(CheckOut, CheckIn) as LatestLengthofStay             FROM lab7_reservations as Res                 INNER JOIN lab7_rooms as Rooms ON Res.Room = Rooms.RoomCode             WHERE CheckOut <= NOW()         ) AS Stays     ) as Ranking     WHERE Ranker = 1 ) SELECT RoomCode, RoomName, Beds, bedType, maxOcc, basePrice, decor, PopScore, NextAvailableCheckIn, LatestLengthofStay, LatestCheckOut FROM A     INNER JOIN B ON A.RoomCode = B.ROOM     INNER JOIN C ON A.RoomCode = C.ROOM ORDER BY A.PopScore DESC";
+
+        try(Statement stmt = conn.createStatement()) {
+          ResultSet rs = stmt.executeQuery(sqlA);
+          printResultSet(rs);
+
+        }
+        System.out.println();
+        conn.close();
+      } catch (SQLException ex) {
+        System.out.println("Oops, something went wrong.");
+      };
+    }
+
+  //r2
+  public void R2() throws SQLException {
+
+    try {
+          Class.forName(JDBC_DRIVER);
+          //System.out.println("MySQL JDBC Driver loaded");
+      } catch (ClassNotFoundException ex) {
+          System.err.println("Unable to load JDBC Driver");
+          System.exit(-1);
+      };
+
+      try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+
+        Scanner scan = new Scanner(System.in);
+
+        /* Get information */
+        System.out.println("Hi! Welcome to the reservation system. Please enter the following information: ");
+        System.out.println("Please enter your First Name.");
+        String firstname = scan.nextLine().toUpperCase();
+        System.out.println("Please enter your Last Name.");
+        String lastname = scan.nextLine().toUpperCase();
+        System.out.println("Please enter your desired Room Type.");
+        String room = scan.nextLine().toUpperCase();
+        System.out.println("Please enter your desired Bed Type.");
+        String bed = scan.nextLine();
+        System.out.println("Please enter the begin date of your stay.");
+        String startdate = scan.nextLine();
+        System.out.println("Please enter the end date of your stay.");
+        String enddate = scan.nextLine();
+        System.out.println("Please enter the number of children.");
+        int children = scan.nextInt();
+        System.out.println("Please enter the number of adults.");
+        int adults = scan.nextInt();
+        int total = adults + children;
+
+
+        /* Check for MaxOccupancy */
+        if(room.toUpperCase().equals("ANY") == false)
+        {
+          String checkOccupancy = String.format("SELECT * FROM lab7_rooms WHERE RoomCode = '%s'", room);
+          try(Statement stmt = conn.createStatement()) {
+              ResultSet rs = stmt.executeQuery(checkOccupancy);
+              while (rs.next()) {
+                if(rs.getInt("maxOcc") < total) {
+                  System.out.print("Max occupancy exceeded for this room -- would you like to continue [1] or start over? [2]");
+                  int ans = scan.nextInt();
+                  if(ans != 1) R2();
+                }
+              }
+          }
+        } else {
+          String checkOccupancy = "SELECT MAX(maxOcc) AS maxOCC FROM lab7_rooms";
+          try(Statement stmt = conn.createStatement()) {
+                    ResultSet rs = stmt.executeQuery(checkOccupancy);
+
+              while (rs.next()) {
+                if(rs.getInt("maxOcc") < total) {
+                  System.out.print("Max occupancy exceeded for all rooms -- would you like to continue [1] or start over? [2]");
+                  int ans = scan.nextInt();
+                  if(ans != 1) R2();
+                }
+              }
+          }
+        }
+
+        boolean match = false;
+
+        List<RoomReservation> reservations  = new ArrayList<RoomReservation>();
+
+        /* Look for match */
+        if(room.toUpperCase().equals("ANY") == false) {
+          String findmatch = String.format("SELECT * FROM lab7_reservations as Res WHERE Room = '%s' AND ('%s' < CheckOut) AND ('%s' > CheckIn)", room, startdate, enddate);
+
+          try(Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(findmatch);
+              if(rs.next() == false) {
+                match = true;
+                RoomReservation res = new RoomReservation(room, startdate, enddate);
+                reservations.add(res);
+              }
+          }
+        }
+
+        /* if match not found */
+        if(match == false){
+
+          String similar = String.format("SELECT * FROM lab7_rooms WHERE RoomCode = '%s'", room);
+          String decor = "";
+          String beds = "";
+
+          try(Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(similar);
+                      while(rs.next()) {
+              decor = rs.getString("decor");
+              beds = rs.getString("bedType");
+            }
+          }
+
+          System.out.println(decor + " " +  beds);
+
+          similar = String.format("SELECT RoomCode FROM lab7_rooms WHERE decor = '%s' OR bedType = '%s'", decor, beds);
+          int i = 0;
+
+          try(Statement stmt = conn.createStatement()) {
+
+            ResultSet rs = stmt.executeQuery(similar);
+            while(rs.next()) {
+            }
+          }
+
+          String find_partialmatch = String.format("SELECT RoomCode FROM lab7_rooms WHERE RoomCode NOT IN (SELECT Room FROM lab7_reservations WHERE ('%s' < CheckOut) AND ('%s' > CheckIn))", startdate, enddate);
+
+          try(Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(find_partialmatch);
+            while(rs.next() && reservations.size() < 5) {
+              RoomReservation res = new RoomReservation(rs.getString("RoomCode"), startdate, enddate);
+              reservations.add(res);
+            }
+          }
+        }
+
+        if(reservations.size() < 5) {
+          System.out.println("I AM FINDING");
+          String find_more = String.format("SELECT Room, CheckOut as StartDate, DATE_ADD(CheckOut, INTERVAL 1 DAY) as EndDate FROM ( SELECT      *, RANK() OVER (PARTITION BY ROOM ORDER BY NextDate ASC) as Ranking FROM( SELECT *, DATEDIFF(CheckOut, '%s') AS NextDate     FROM lab7_reservations as R WHERE CODE NOT IN (SELECT R.CODE FROM lab7_reservations as R INNER JOIN lab7_reservations as R1 ON R.Room = R1.Room AND R.CheckOut = R1.CheckIn) AND Room IN (SELECT Room     FROM lab7_reservations      WHERE '%s' BETWEEN CheckIn AND CheckOut) ) as ValidDates WHERE NextDate > 0 ) as Ranker WHERE Ranking = 1 ORDER BY StartDate ASC", startdate, startdate);
+
+          try(Statement stmt = conn.createStatement()) {
+                      ResultSet rs = stmt.executeQuery(find_more);
+                      while(rs.next() && reservations.size() < 5) {
+                          RoomReservation res = new RoomReservation(rs.getString("Room"), rs.getString("StartDate"), rs.getString("EndDate"));
+                          reservations.add(res);
+                      }
+                  }
+        }
+
+        int counter = 1;
+        for (RoomReservation r: reservations){
+          System.out.println(String.format("[%d] Room: '%s'\nCheckIn: '%s'\nCheckOut:'%s'", counter, r.room, r.startdate, r.enddate));
+          counter++;
+        }
+
+        /*Finalize booking*/
+        int book = scan.nextInt() - 1;
+        if((0 <= book) && (book  < reservations.size())) {
+          System.out.println("RESERVATION CONFIRMATION");
+          System.out.println(String.format("%s, %s", firstname, lastname));
+
+          String room_info = String.format("SELECT * FROM lab7_rooms WHERE RoomCode = '%s'", reservations.get(book).room);
+          double base_rate = 0;
+          try(Statement stmt = conn.createStatement()) {
+                      ResultSet rs = stmt.executeQuery(room_info);
+                      while(rs.next()) {
+                        System.out.println(String.format("%s, %s, %s", rs.getString("RoomCode"), rs.getString("RoomName"), rs.getString("bedType")));
+              base_rate = rs.getFloat("basePrice");
+            }
+                  }
+          System.out.println(String.format("%s to %s", reservations.get(book).startdate, reservations.get(book).enddate));
+          System.out.println(String.format("Adults %d, Children %d", adults, children));
+
+          /*rate calculations*/
+
+          String find_week_days = String.format("SELECT 5 * (DATEDIFF('%s', '%s') DIV 7) + MID('0123444401233334012222340111123400012345001234550', 7 * WEEKDAY('%s') + WEEKDAY('%s') + 1, 1) AS WeekDays", reservations.get(book).enddate, reservations.get(book).startdate, reservations.get(book).startdate, reservations.get(book).enddate);
+          int week_days = 0;
+          try(Statement stmt = conn.createStatement()) {
+                      ResultSet rs = stmt.executeQuery(find_week_days);
+                      while(rs.next()) {
+                        week_days = rs.getInt("WeekDays");
+            }
+                  }
+
+          String find_days = String.format("SELECT DATEDIFF('%s', '%s') AS total", reservations.get(book).enddate, reservations.get(book).startdate);
+
+          int total_days = 0;
+
+          try(Statement stmt = conn.createStatement()) {
+                      ResultSet rs = stmt.executeQuery(find_days);
+                      while(rs.next()) {
+                          total_days = rs.getInt("total");
+                      }
+                  }
+
+          int weekends = total_days - week_days;
+
+          double total_cost = 0;
+
+          total_cost += week_days * base_rate;
+          total_cost += weekends * base_rate * 1.1;
+          total_cost = total_cost * 1.18;
+
+          System.out.println(String.format("YOUR RESERVATION TOTAL IS: %f. Press [1] to confirm.", total_cost));
+
+          int confirm = scan.nextInt();
+
+          if(confirm == 1) {
+
+            int randomNum = ThreadLocalRandom.current().nextInt(1,  1000 + 1);
+
+            String insert = String.format("INSERT INTO lab7_reservations ( CODE, Room, CheckIn, CheckOut, Rate, LastName, FirstName, Adults, Kids) VALUES ( '%d', '%s', '%s', '%s', '%f', '%s', '%s', '%d', '%d' );", randomNum, reservations.get(book).room, reservations.get(book).startdate, reservations.get(book).enddate, total_cost,
+          lastname, firstname, adults, children);
+
+            try(Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate(insert);
+                    }
+          }
+        }
+          System.out.println("Thank you!");
+          conn.close(); //where does the close go?
+      } catch (SQLException ex) {
+        System.out.println("Couldn't make this reservation.");
+      };
+    }
+
     // R3
     public static void changeReservation()
       throws SQLException {
@@ -941,11 +1192,11 @@ public class InnReservations {
                 switch(option) {
                   case 'a':
                     System.out.println("\nView rooms and rates.\n");
-                    //call function
+                    ir.R1();
                     break;
                   case 'b':
                     System.out.println("\nMake a reservation.\n");
-                    //call function
+                    ir.R2();
                     break;
                   case 'c':
                   System.out.println("\nUpdate a reservation.\n");
