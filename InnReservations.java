@@ -608,23 +608,39 @@ public class InnReservations {
 
         /* Get information */
         System.out.println("Hi! Welcome to the reservation system. Please enter the following information: ");
-        System.out.println("Please enter your First Name.");
+        System.out.print("Please enter your First Name: ");
         String firstname = scan.nextLine().toUpperCase();
-        System.out.println("Please enter your Last Name.");
+        System.out.print("Please enter your Last Name: ");
         String lastname = scan.nextLine().toUpperCase();
-        System.out.println("Please enter your desired Room Type.");
+        System.out.print("Please enter your desired Room Type: ");
         String room = scan.nextLine().toUpperCase();
-        System.out.println("Please enter your desired Bed Type.");
+        System.out.print("Please enter your desired Bed Type: ");
         String bed = scan.nextLine();
-        System.out.println("Please enter the begin date of your stay.");
+        System.out.print("Please enter the begin date of your stay, in the format YYYY-MM-DD: ");
         String startdate = scan.nextLine();
-        System.out.println("Please enter the end date of your stay.");
+   		try {
+            Date tempDate = new SimpleDateFormat("yyyy-MM-dd").parse(startdate);
+            Date beginDate = new java.sql.Date(tempDate.getTime());
+          } catch (ParseException e) {
+            System.out.println("Invalid Date. Try again with format yyyy-MM-dd.");
+            return;
+        }
+		System.out.print("Please enter the end date of your stay, in the format YYYY-MM-DD: ");
         String enddate = scan.nextLine();
-        System.out.println("Please enter the number of children.");
+		try {
+            Date tempDate = new SimpleDateFormat("yyyy-MM-dd").parse(enddate);
+            Date beginDate = new java.sql.Date(tempDate.getTime());
+          } catch (ParseException e) {
+            System.out.println("Invalid Date. Try again with format yyyy-MM-dd.");
+            return;
+        }
+
+        System.out.print("Please enter the number of children: ");
         int children = scan.nextInt();
-        System.out.println("Please enter the number of adults.");
+        System.out.print("Please enter the number of adults: ");
         int adults = scan.nextInt();
         int total = adults + children;
+
 
 
         /* Check for MaxOccupancy */
@@ -635,8 +651,8 @@ public class InnReservations {
               ResultSet rs = stmt.executeQuery(checkOccupancy);
               while (rs.next()) {
                 if(rs.getInt("maxOcc") < total) {
-                  System.out.print("Max occupancy exceeded for this room -- would you like to continue [1] or start over? [2]");
-                  int ans = scan.nextInt();
+                  System.out.print("Max occupancy exceeded for all rooms -- press 1 to continue or 2 to start over: "); 
+				  int ans = scan.nextInt();
                   if(ans != 1) R2();
                 }
               }
@@ -648,7 +664,7 @@ public class InnReservations {
 
               while (rs.next()) {
                 if(rs.getInt("maxOcc") < total) {
-                  System.out.print("Max occupancy exceeded for all rooms -- would you like to continue [1] or start over? [2]");
+                  System.out.print("Max occupancy exceeded for all rooms -- press 1 to continue or 2 to start over: ");
                   int ans = scan.nextInt();
                   if(ans != 1) R2();
                 }
@@ -677,30 +693,6 @@ public class InnReservations {
         /* if match not found */
         if(match == false){
 
-          String similar = String.format("SELECT * FROM lab7_rooms WHERE RoomCode = '%s'", room);
-          String decor = "";
-          String beds = "";
-
-          try(Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery(similar);
-                      while(rs.next()) {
-              decor = rs.getString("decor");
-              beds = rs.getString("bedType");
-            }
-          }
-
-          System.out.println(decor + " " +  beds);
-
-          similar = String.format("SELECT RoomCode FROM lab7_rooms WHERE decor = '%s' OR bedType = '%s'", decor, beds);
-          int i = 0;
-
-          try(Statement stmt = conn.createStatement()) {
-
-            ResultSet rs = stmt.executeQuery(similar);
-            while(rs.next()) {
-            }
-          }
-
           String find_partialmatch = String.format("SELECT RoomCode FROM lab7_rooms WHERE RoomCode NOT IN (SELECT Room FROM lab7_reservations WHERE ('%s' < CheckOut) AND ('%s' > CheckIn))", startdate, enddate);
 
           try(Statement stmt = conn.createStatement()) {
@@ -713,7 +705,7 @@ public class InnReservations {
         }
 
         if(reservations.size() < 5) {
-          System.out.println("I AM FINDING");
+          System.out.println("Unfortunately, we could not find a direct match. Below, we have chosen alternate rooms for your specific dates or the closest dates to your CheckIn Time.");
           String find_more = String.format("SELECT Room, CheckOut as StartDate, DATE_ADD(CheckOut, INTERVAL 1 DAY) as EndDate FROM ( SELECT      *, RANK() OVER (PARTITION BY ROOM ORDER BY NextDate ASC) as Ranking FROM( SELECT *, DATEDIFF(CheckOut, '%s') AS NextDate     FROM lab7_reservations as R WHERE CODE NOT IN (SELECT R.CODE FROM lab7_reservations as R INNER JOIN lab7_reservations as R1 ON R.Room = R1.Room AND R.CheckOut = R1.CheckIn) AND Room IN (SELECT Room     FROM lab7_reservations      WHERE '%s' BETWEEN CheckIn AND CheckOut) ) as ValidDates WHERE NextDate > 0 ) as Ranker WHERE Ranking = 1 ORDER BY StartDate ASC", startdate, startdate);
 
           try(Statement stmt = conn.createStatement()) {
@@ -727,9 +719,11 @@ public class InnReservations {
 
         int counter = 1;
         for (RoomReservation r: reservations){
-          System.out.println(String.format("[%d] Room: '%s'\nCheckIn: '%s'\nCheckOut:'%s'", counter, r.room, r.startdate, r.enddate));
+          System.out.println(String.format("[%d] Room: '%s' -- %s to '%s'", counter, r.room, r.startdate, r.enddate));
           counter++;
         }
+
+		System.out.println("Please select the number of the reservation you would like to book. Press 6 to cancel. :   ");
 
         /*Finalize booking*/
         int book = scan.nextInt() - 1;
@@ -779,7 +773,7 @@ public class InnReservations {
           total_cost += weekends * base_rate * 1.1;
           total_cost = total_cost * 1.18;
 
-          System.out.println(String.format("YOUR RESERVATION TOTAL IS: %f. Press [1] to confirm.", total_cost));
+          System.out.print(String.format("YOUR RESERVATION TOTAL IS: %f. Press 1 to confirm, or 2 to cancel: ", total_cost));
 
           int confirm = scan.nextInt();
 
@@ -1168,7 +1162,7 @@ public class InnReservations {
               InnReservations ir = new InnReservations();
 
               String menu = "\nChoose one of the following options: \n" +
-                            "\ta - View rooms and rates.\n" +
+                            "\ta - View rooms, rates, and popularity.\n" +
                             "\tb - Make a reservation.\n" +
                             "\tc - Update a reservation.\n" +
                             "\td - Cancel a reservation.\n" +
@@ -1188,7 +1182,7 @@ public class InnReservations {
                 char option = mainScanner.nextLine().charAt(0);
                 switch(option) {
                   case 'a':
-                    System.out.println("\nView rooms and rates.\n");
+                    System.out.println("\nView rooms, rates, and popularity.\n");
                     ir.R1();
                     break;
                   case 'b':
