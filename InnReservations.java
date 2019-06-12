@@ -11,9 +11,6 @@ import java.util.concurrent.ThreadLocalRandom;
 // RUN THIS ON YOUR TERMINAL!!!!!!!!!!
 //export CLASSPATH=$CLASSPATH:mysql-connector-java-8.0.16.jar:.
 
-// RUN THIS ON YOUR TERMINAL!!!!!!!!!!
-//export CLASSPATH=$CLASSPATH:mysql-connector-java-8.0.16.jar:.
-
 public class InnReservations {
 
   // JDBC Driver name and DB url
